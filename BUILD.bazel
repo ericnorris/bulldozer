@@ -1,0 +1,2 @@
+# gazelle:prefix github.com/ericnorris/bulldozer
+# gazelle:proto disable_global
