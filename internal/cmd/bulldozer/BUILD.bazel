@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bulldozer.go",
+        "start.go",
+    ],
+    importpath = "github.com/ericnorris/bulldozer/internal/cmd/bulldozer",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/statemachine:go_default_library"],
+)
