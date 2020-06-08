@@ -117,12 +117,14 @@ func (r *Runner) scale(ctx context.Context, info clusterInfo) error {
 	var oldCanarySize int64
 	var newCanarySize int64
 
+	// TODO should this reset to zero on the very first scale() call, even if a
+	// canary template is found?
 	for _, version := range info.group.Versions {
 		if version.InstanceTemplate == info.template.SelfLink {
 			if version.TargetSize.Fixed > 0 {
 				oldCanarySize = version.TargetSize.Fixed
 
-				log.Printf("found existing canary deployment with '%d' instances", oldCanarySize)
+				log.Printf("found existing canary deployment with %d instances", oldCanarySize)
 			}
 
 			continue
@@ -154,6 +156,8 @@ func (r *Runner) scale(ctx context.Context, info clusterInfo) error {
 	var versions []*compute.InstanceGroupManagerVersion
 
 	if newCanarySize >= info.group.TargetSize {
+		newCanarySize = info.group.TargetSize
+
 		versions = []*compute.InstanceGroupManagerVersion{
 			&compute.InstanceGroupManagerVersion{
 				InstanceTemplate: info.template.SelfLink,
@@ -172,10 +176,25 @@ func (r *Runner) scale(ctx context.Context, info clusterInfo) error {
 		}
 	}
 
-	log.Printf("patching managed instance group with version config: %v", versions)
+	log.Printf("patching managed instance group with canary target of %d instances", newCanarySize)
+
+	maxSurge := newCanarySize - oldCanarySize
+	maxUnavailable := int64(0)
+
+	if maxSurge < int64(len(info.group.DistributionPolicy.Zones)) {
+		// avoids 'Fixed updatePolicy.maxSurge for regional managed instance
+		// group has to be either 0 or at least equal to the number of zones.'
+		// errors
+		maxSurge = int64(len(info.group.DistributionPolicy.Zones))
+	}
 
 	patch := &compute.InstanceGroupManager{
 		Versions: versions,
+		UpdatePolicy: &compute.InstanceGroupManagerUpdatePolicy{
+			Type:           "PROACTIVE",
+			MaxSurge:       &compute.FixedOrPercent{Fixed: maxSurge},
+			MaxUnavailable: &compute.FixedOrPercent{Fixed: maxUnavailable},
+		},
 	}
 
 	if err := r.computeAPI.PatchMIG(ctx, r.projectID, r.location, r.migName, patch); err != nil {
