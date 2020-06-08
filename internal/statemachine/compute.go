@@ -2,6 +2,7 @@ package statemachine
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"google.golang.org/api/compute/v1"
@@ -230,7 +231,7 @@ func (g googleComputeAPI) GetBackendServiceGroupHealth(
 	case backend.Region != "":
 		groupHealth, err = g.computeService.
 			RegionBackendServices.
-			GetHealth(projectID, backend.Region, backend.Name, groupRef).
+			GetHealth(projectID, filepath.Base(backend.Region), backend.Name, groupRef).
 			Context(ctx).
 			Do()
 
