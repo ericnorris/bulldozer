@@ -15,6 +15,6 @@ func main() {
 	cliContext.BindTo(context.Background(), (*context.Context)(nil))
 
 	if err := cliContext.Run(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("[FATAL] %s", err)
 	}
 }
