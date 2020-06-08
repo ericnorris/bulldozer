@@ -193,8 +193,8 @@ func (g googleComputeAPI) FindBackendServiceWithMIG(
 				// check the list of backend services
 				for _, candidateBackendService := range list.BackendServices {
 					// ...by iterating over the backends in the backend service
-					for _, backend := range backendService.Backends {
-						if backend.Group == mig.SelfLink {
+					for _, backend := range candidateBackendService.Backends {
+						if backend.Group == mig.InstanceGroup {
 							backendService = candidateBackendService
 
 							return nil
@@ -224,7 +224,7 @@ func (g googleComputeAPI) GetBackendServiceGroupHealth(
 	var groupHealth *compute.BackendServiceGroupHealth
 	var err error
 
-	groupRef := &compute.ResourceGroupReference{Group: mig.SelfLink}
+	groupRef := &compute.ResourceGroupReference{Group: mig.InstanceGroup}
 
 	switch {
 	case backend.Region != "":
